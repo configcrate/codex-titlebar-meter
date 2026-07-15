@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#080b12"/><stop offset="1" stop-color="#111528"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6f8cff"/><stop offset="1" stop-color="#9b6dff"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#6f8cff" stop-opacity=".26"/><stop offset="1" stop-color="#6f8cff" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#000" flood-opacity=".55"/></filter>
+    <filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="10" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1280" height="640" rx="28" fill="url(#bg)"/>
+  <circle cx="1030" cy="120" r="310" fill="url(#glow)"/><circle cx="250" cy="620" r="260" fill="url(#glow)" opacity=".42"/>
+  <path d="M0 520C270 455 390 590 660 525s420-34 620 10v105H0Z" fill="#647cff" opacity=".035"/>
+  <g font-family="Segoe UI, Inter, Arial, sans-serif">
+    <g transform="translate(68 54)"><rect width="176" height="30" rx="15" fill="#fff" opacity=".07"/><circle cx="16" cy="15" r="5" fill="#7d8fff"/><text x="30" y="20" fill="#bfc7dc" font-size="12" font-weight="700" letter-spacing="1.5">CONFIGCRATE · OPEN</text></g>
+    <text x="68" y="148" fill="#f5f7ff" font-size="28" font-weight="700">No more account-menu clicks</text>
+    <text x="68" y="208" fill="#fff" font-size="47" font-weight="800">Codex usage</text>
+    <text x="68" y="264" fill="url(#accent)" font-size="47" font-weight="800">always in sight</text>
+    <text x="70" y="314" fill="#aeb6cb" font-size="18">Real quota · automatic follow · zero modification</text>
+    <g transform="translate(68 362)" font-size="14" font-weight="650">
+      <rect width="104" height="38" rx="19" fill="#7b8eff" opacity=".13" stroke="#7b8eff" stroke-opacity=".35"/><text x="52" y="25" fill="#dfe4ff" text-anchor="middle">Zero click</text>
+      <rect x="116" width="118" height="38" rx="19" fill="#7b8eff" opacity=".13" stroke="#7b8eff" stroke-opacity=".35"/><text x="175" y="25" fill="#dfe4ff" text-anchor="middle">Live quota</text>
+      <rect x="246" width="132" height="38" rx="19" fill="#7b8eff" opacity=".13" stroke="#7b8eff" stroke-opacity=".35"/><text x="312" y="25" fill="#dfe4ff" text-anchor="middle">Native &amp; light</text>
+    </g>
+    <text x="68" y="565" fill="#717b94" font-size="14">github.com/configcrate/codex-titlebar-meter</text>
+
+    <g filter="url(#shadow)">
+      <rect x="505" y="70" width="708" height="500" rx="18" fill="#171a22" stroke="#34394a"/>
+      <rect x="506" y="71" width="706" height="50" rx="17" fill="#20232c"/><rect x="506" y="103" width="706" height="18" fill="#20232c"/>
+      <rect x="523" y="85" width="22" height="22" rx="7" fill="#f4f5f7"/><text x="534" y="101" fill="#151821" font-size="12" font-weight="900" text-anchor="middle">C</text>
+      <text x="557" y="102" fill="#c7cbd6" font-size="13" font-weight="600">Codex</text><text x="625" y="102" fill="#8e96a9" font-size="12">File</text><text x="663" y="102" fill="#8e96a9" font-size="12">Edit</text><text x="702" y="102" fill="#8e96a9" font-size="12">View</text>
+      <g><rect x="782" y="80" width="298" height="33" rx="8" fill="#1d2028" stroke="#8191ff" stroke-opacity=".3"/><text x="798" y="101" fill="#f0f2f8" font-size="13">1 week quota 72% · resets Jul 22</text><rect x="794" y="108" width="250" height="2.5" rx="1.25" fill="#3b3f4b"/><rect x="794" y="108" width="180" height="2.5" rx="1.25" fill="url(#accent)"/><text x="1061" y="102" fill="#8b79ff" font-size="13" font-weight="800">···</text></g>
+      <g fill="#8b92a3"><path d="M1110 94h12" stroke="#8b92a3" stroke-width="1.5"/><rect x="1150" y="89" width="11" height="11" fill="none" stroke="#8b92a3" stroke-width="1.4"/><path d="M1190 89l12 12m0-12l-12 12" stroke="#c7cbd6" stroke-width="1.6"/></g>
+      <rect x="506" y="121" width="170" height="448" fill="#13161d"/><rect x="524" y="143" width="134" height="35" rx="9" fill="#252a36"/><circle cx="541" cy="160" r="6" fill="#7d8fff"/><text x="555" y="165" fill="#d7dbe6" font-size="12">New task</text>
+      <g fill="#3a3f4c"><rect x="524" y="202" width="104" height="9" rx="4.5"/><rect x="524" y="230" width="126" height="9" rx="4.5"/><rect x="524" y="258" width="90" height="9" rx="4.5"/><rect x="524" y="310" width="116" height="9" rx="4.5"/><rect x="524" y="338" width="82" height="9" rx="4.5"/></g>
+      <text x="718" y="174" fill="#eef1f8" font-size="19" font-weight="700">Keep usage inside your workflow</text><text x="718" y="205" fill="#8f98ab" font-size="13">No menu. No dashboard. No interruption.</text>
+      <rect x="718" y="237" width="438" height="116" rx="14" fill="#1f232d" stroke="#2f3441"/><rect x="740" y="260" width="190" height="10" rx="5" fill="#454b5b"/><rect x="740" y="284" width="356" height="9" rx="4.5" fill="#353a47"/><rect x="740" y="307" width="310" height="9" rx="4.5" fill="#353a47"/>
+      <rect x="718" y="375" width="438" height="118" rx="14" fill="#1b1f28"/><rect x="740" y="401" width="324" height="9" rx="4.5" fill="#343946"/><rect x="740" y="424" width="384" height="9" rx="4.5" fill="#343946"/><rect x="740" y="447" width="252" height="9" rx="4.5" fill="#343946"/>
+      <rect x="718" y="519" width="438" height="34" rx="17" fill="#242936"/><text x="738" y="541" fill="#727b90" font-size="12">Ask Codex…</text>
+    </g>
+    <g filter="url(#softGlow)"><path d="M886 53c20-20 45-26 70-18" fill="none" stroke="#8493ff" stroke-width="2" stroke-linecap="round"/><path d="M884 53l8-1-2-8" fill="none" stroke="#8493ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <rect x="913" y="20" width="180" height="32" rx="16" fill="#778aff"/><text x="1003" y="41" fill="#fff" font-size="13" font-weight="700" text-anchor="middle">Right in the title bar</text>
+  </g>
+</svg>

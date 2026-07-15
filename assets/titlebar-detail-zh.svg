@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#090c13"/><stop offset="1" stop-color="#15192a"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6e8cff"/><stop offset="1" stop-color="#aa69ff"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-100%" width="140%" height="300%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity=".55"/></filter>
+    <filter id="glow" x="-30%" y="-200%" width="160%" height="500%"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1280" height="420" rx="24" fill="url(#bg)"/>
+  <g font-family="Microsoft YaHei, Noto Sans SC, Segoe UI, sans-serif">
+    <text x="62" y="66" fill="#fff" font-size="30" font-weight="800">位置一眼看懂</text>
+    <text x="62" y="96" fill="#939cb2" font-size="15">它不是托盘图标，而是一直贴在 Codex 标题栏右侧。</text>
+
+    <g filter="url(#shadow)">
+      <rect x="62" y="138" width="1156" height="74" rx="14" fill="#20232c" stroke="#373c4c"/>
+      <rect x="82" y="160" width="28" height="28" rx="8" fill="#f0f2f5"/><text x="96" y="180" fill="#171a22" font-size="14" font-weight="900" text-anchor="middle">C</text>
+      <text x="124" y="180" fill="#d4d8e3" font-size="14" font-weight="700">Codex</text>
+      <text x="210" y="180" fill="#a5acbc" font-size="14">文件</text><text x="263" y="180" fill="#a5acbc" font-size="14">编辑</text><text x="316" y="180" fill="#a5acbc" font-size="14">选择</text><text x="369" y="180" fill="#a5acbc" font-size="14">查看</text><text x="422" y="180" fill="#a5acbc" font-size="14">帮助</text>
+      <rect x="691" y="151" width="330" height="48" rx="10" fill="#1a1d25" stroke="#8292ff" stroke-width="1.5"/>
+      <text x="716" y="178" fill="#f3f5fb" font-size="15">1周额度 72% · 7月22日重置</text>
+      <rect x="706" y="190" width="270" height="3" rx="1.5" fill="#3c404c"/><rect x="706" y="190" width="194" height="3" rx="1.5" fill="url(#accent)"/>
+      <text x="993" y="181" fill="#967aff" font-size="14" font-weight="800">···</text>
+      <path d="M1060 175h18" stroke="#929aaa" stroke-width="1.6"/><rect x="1111" y="166" width="16" height="16" fill="none" stroke="#929aaa" stroke-width="1.5"/><path d="M1169 166l18 18m0-18l-18 18" stroke="#cbd0db" stroke-width="1.8"/>
+    </g>
+
+    <g filter="url(#glow)"><path d="M856 132V112" stroke="#8292ff" stroke-width="2"/><path d="M850 120l6-8 6 8" fill="none" stroke="#8292ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <rect x="769" y="76" width="176" height="34" rx="17" fill="#778aff"/><text x="857" y="99" fill="#fff" font-size="14" font-weight="700" text-anchor="middle">实时用量显示区</text>
+
+    <g transform="translate(80 270)">
+      <circle cx="16" cy="16" r="16" fill="#7187ff" opacity=".16"/><path d="M9 16l5 5 10-11" fill="none" stroke="#8292ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="46" y="13" fill="#f0f2f8" font-size="16" font-weight="700">菜单保持可用</text><text x="46" y="36" fill="#8790a5" font-size="13">固定靠右，不覆盖“文件 / 编辑”</text>
+    </g>
+    <g transform="translate(446 270)">
+      <circle cx="16" cy="16" r="16" fill="#7187ff" opacity=".16"/><path d="M16 7v10l7 4" fill="none" stroke="#8292ff" stroke-width="2.2" stroke-linecap="round"/>
+      <text x="46" y="13" fill="#f0f2f8" font-size="16" font-weight="700">实时剩余额度</text><text x="46" y="36" fill="#8790a5" font-size="13">周期、百分比、重置时间一行看完</text>
+    </g>
+    <g transform="translate(840 270)">
+      <circle cx="16" cy="16" r="16" fill="#7187ff" opacity=".16"/><circle cx="11" cy="13" r="3" fill="#6f8cff"/><circle cx="20" cy="10" r="3" fill="#9c70ff"/><circle cx="21" cy="20" r="3" fill="#58ca91"/>
+      <text x="46" y="13" fill="#f0f2f8" font-size="16" font-weight="700">颜色可以切换</text><text x="46" y="36" fill="#8790a5" font-size="13">点击右侧 ··· 切换强调色</text>
+    </g>
+    <text x="1210" y="390" fill="#626c83" font-size="12" text-anchor="end">ConfigCrate · codex-titlebar-meter</text>
+  </g>
+</svg>

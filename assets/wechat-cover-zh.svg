@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="383" viewBox="0 0 900 383">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#080b12"/><stop offset="1" stop-color="#171b31"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#6e8cff"/><stop offset="1" stop-color="#a96cff"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#7589ff" stop-opacity=".35"/><stop offset="1" stop-color="#7589ff" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-30%" y="-100%" width="160%" height="300%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity=".65"/></filter>
+  </defs>
+  <rect width="900" height="383" fill="url(#bg)"/>
+  <circle cx="760" cy="100" r="280" fill="url(#glow)"/><circle cx="140" cy="390" r="220" fill="url(#glow)" opacity=".35"/>
+  <g font-family="Microsoft YaHei, Noto Sans SC, Segoe UI, sans-serif">
+    <rect x="48" y="42" width="164" height="28" rx="14" fill="#fff" opacity=".07"/><circle cx="64" cy="56" r="4.5" fill="#8091ff"/><text x="77" y="61" fill="#bdc5d8" font-size="11" font-weight="700" letter-spacing="1">CONFIGCRATE · 开源</text>
+    <text x="48" y="137" fill="#fff" font-size="34" font-weight="800">Codex 剩余额度</text>
+    <text x="48" y="187" fill="url(#accent)" font-size="38" font-weight="900">直接放到标题栏</text>
+    <text x="50" y="228" fill="#a5aec2" font-size="15">不用点头像 · 打开 Codex 就能看见</text>
+    <g transform="translate(50 276)" font-size="12" font-weight="650"><rect width="76" height="30" rx="15" fill="#788cff" opacity=".14" stroke="#788cff" stroke-opacity=".35"/><text x="38" y="20" fill="#e2e6ff" text-anchor="middle">真实用量</text><rect x="88" width="76" height="30" rx="15" fill="#788cff" opacity=".14" stroke="#788cff" stroke-opacity=".35"/><text x="126" y="20" fill="#e2e6ff" text-anchor="middle">自动跟随</text><rect x="176" width="88" height="30" rx="15" fill="#788cff" opacity=".14" stroke="#788cff" stroke-opacity=".35"/><text x="220" y="20" fill="#e2e6ff" text-anchor="middle">中英双语</text></g>
+
+    <g filter="url(#shadow)">
+      <rect x="410" y="74" width="540" height="235" rx="16" fill="#171a22" stroke="#353a4a"/>
+      <rect x="411" y="75" width="538" height="54" rx="15" fill="#20232c"/><rect x="411" y="111" width="538" height="18" fill="#20232c"/>
+      <rect x="430" y="90" width="22" height="22" rx="7" fill="#f2f3f6"/><text x="441" y="106" fill="#171a22" font-size="12" font-weight="900" text-anchor="middle">C</text><text x="466" y="107" fill="#cbd0dc" font-size="12" font-weight="700">Codex</text>
+      <text x="530" y="107" fill="#8f97aa" font-size="11">文件</text><text x="567" y="107" fill="#8f97aa" font-size="11">编辑</text>
+      <rect x="626" y="84" width="257" height="36" rx="9" fill="#191c24" stroke="#8493ff" stroke-width="1.3"/>
+      <text x="643" y="106" fill="#f3f5fa" font-size="12">1周额度 72% · 7月22日重置</text><rect x="638" y="115" width="210" height="2.5" rx="1.25" fill="#3b404d"/><rect x="638" y="115" width="151" height="2.5" rx="1.25" fill="url(#accent)"/><text x="861" y="107" fill="#977aff" font-size="12" font-weight="800">···</text>
+      <path d="M902 102h12" stroke="#939aaa" stroke-width="1.4"/><path d="M930 95l12 12m0-12l-12 12" stroke="#cbd0da" stroke-width="1.5"/>
+      <rect x="411" y="129" width="126" height="179" fill="#13161d"/><rect x="430" y="151" width="88" height="27" rx="8" fill="#262b37"/><circle cx="443" cy="164" r="4.5" fill="#7d8fff"/><rect x="454" y="160" width="46" height="7" rx="3.5" fill="#596176"/>
+      <g fill="#353a47"><rect x="430" y="198" width="72" height="7" rx="3.5"/><rect x="430" y="220" width="88" height="7" rx="3.5"/><rect x="430" y="242" width="62" height="7" rx="3.5"/></g>
+      <rect x="566" y="154" width="342" height="65" rx="12" fill="#20242e"/><rect x="586" y="174" width="150" height="8" rx="4" fill="#454b5b"/><rect x="586" y="193" width="267" height="7" rx="3.5" fill="#363b48"/>
+      <rect x="566" y="237" width="342" height="49" rx="12" fill="#1d212a"/><rect x="586" y="257" width="240" height="7" rx="3.5" fill="#363b48"/>
+    </g>
+    <path d="M750 55l0 18" stroke="#8192ff" stroke-width="2"/><path d="M744 65l6 8 6-8" fill="none" stroke="#8192ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="680" y="24" width="140" height="30" rx="15" fill="#778aff"/><text x="750" y="44" fill="#fff" font-size="12" font-weight="700" text-anchor="middle">用量一直看得见</text>
+    <text x="852" y="348" fill="#6d768d" font-size="11" text-anchor="end">github.com/configcrate/codex-titlebar-meter</text>
+  </g>
+</svg>
