@@ -10,7 +10,7 @@ use std::{
 };
 
 use anyhow::{Context, Result, bail};
-use chrono::{Datelike, Local, TimeZone, Timelike};
+use chrono::{Local, TimeZone};
 use serde_json::{Value, json};
 
 use crate::{
@@ -41,7 +41,7 @@ fn worker_loop() {
         if let Err(error) = result {
             eprintln!("Codex usage reader: {error:#}");
             if native::codex_is_active() {
-                native::update_snapshot(UsageSnapshot::error("暂时无法读取用量，正在重试…"));
+                native::update_snapshot(UsageSnapshot::retrying());
             }
         }
 
@@ -216,25 +216,10 @@ fn parse_window(value: Option<&Value>) -> Option<LimitWindow> {
         .and_then(Value::as_i64)
         .and_then(|timestamp| Local.timestamp_opt(timestamp, 0).single());
 
-    let label = if duration == 10_080 {
-        "1周".to_string()
-    } else if duration >= 1_440 && duration % 1_440 == 0 {
-        format!("{}天", duration / 1_440)
-    } else if duration >= 60 && duration % 60 == 0 {
-        format!("{}小时", duration / 60)
-    } else {
-        "当前".to_string()
-    };
-    let reset_label = match reset {
-        Some(reset) if duration >= 1_440 => format!("{}月{}日", reset.month(), reset.day()),
-        Some(reset) => format!("{:02}:{:02}", reset.hour(), reset.minute()),
-        None => "--".to_string(),
-    };
-
     Some(LimitWindow {
-        label,
+        duration_minutes: duration,
         remaining_percent: (100.0 - used).round().clamp(0.0, 100.0) as u8,
-        reset_label,
+        resets_at: reset,
     })
 }
 
@@ -331,8 +316,8 @@ mod tests {
         });
         let parsed = parse_snapshot(&response).expect("snapshot");
         assert_eq!(parsed.primary.as_ref().unwrap().remaining_percent, 78);
-        assert_eq!(parsed.primary.as_ref().unwrap().label, "5小时");
+        assert_eq!(parsed.primary.as_ref().unwrap().duration_minutes, 300);
         assert_eq!(parsed.weekly.as_ref().unwrap().remaining_percent, 94);
-        assert_eq!(parsed.weekly.as_ref().unwrap().label, "1周");
+        assert_eq!(parsed.weekly.as_ref().unwrap().duration_minutes, 10_080);
     }
 }

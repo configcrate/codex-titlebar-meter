@@ -9,6 +9,7 @@ use std::{
         Mutex, OnceLock,
         atomic::{AtomicBool, Ordering},
     },
+    time::{Duration, Instant},
 };
 
 use anyhow::{Context, Result, bail};
@@ -21,9 +22,9 @@ use windows_sys::Win32::{
         Dwm::{DWMWA_CLOAKED, DwmGetWindowAttribute},
         Gdi::{
             BeginPaint, CreateFontW, CreateSolidBrush, DEFAULT_CHARSET, DEFAULT_PITCH, DT_CENTER,
-            DT_LEFT, DT_SINGLELINE, DT_VCENTER, DeleteObject, DrawTextW, EndPaint, FF_DONTCARE,
-            FW_NORMAL, FillRect, GdiFlush, HGDIOBJ, InvalidateRect, OUT_DEFAULT_PRECIS,
-            PAINTSTRUCT, SelectObject, SetBkMode, SetTextColor, TRANSPARENT,
+            DT_SINGLELINE, DT_VCENTER, DeleteObject, DrawTextW, EndPaint, FF_DONTCARE, FW_NORMAL,
+            FillRect, GdiFlush, HGDIOBJ, InvalidateRect, OUT_DEFAULT_PRECIS, PAINTSTRUCT,
+            SelectObject, SetBkMode, SetTextColor, TRANSPARENT,
         },
     },
     System::{
@@ -54,13 +55,17 @@ use windows_sys::Win32::{
     },
 };
 
-use crate::model::UsageSnapshot;
+use crate::{
+    locale::AppLocale,
+    model::{LimitWindow, UsageSnapshot},
+};
 
 const CLASS_NAME: &str = "ConfigCrate.CodexTitlebarMeter.Overlay";
 const WINDOW_NAME: &str = "Codex Titlebar Meter";
 const MUTEX_NAME: &str = "Local\\ConfigCrate.CodexTitlebarMeter.4BC6AD61";
 const TRACK_TIMER: usize = 1;
 const TRACK_INTERVAL_MS: u32 = 250;
+const LOCALE_CHECK_INTERVAL: Duration = Duration::from_secs(2);
 
 #[derive(Clone, Copy)]
 struct Palette {
@@ -92,6 +97,8 @@ struct AppState {
     target: HWND,
     snapshot: UsageSnapshot,
     palette_index: usize,
+    locale: AppLocale,
+    next_locale_check: Instant,
 }
 
 unsafe impl Send for AppState {}
@@ -168,6 +175,8 @@ pub fn run() -> Result<()> {
             target: ptr::null_mut(),
             snapshot: UsageSnapshot::default(),
             palette_index: saved_settings.palette_index % PALETTES.len(),
+            locale: AppLocale::detect(),
+            next_locale_check: Instant::now() + LOCALE_CHECK_INTERVAL,
         }))
         .map_err(|_| anyhow::anyhow!("application state was already initialized"))?;
 
@@ -287,6 +296,15 @@ fn track_codex_window() {
         Ok(state) => state,
         Err(_) => return,
     };
+    let now = Instant::now();
+    if now >= state.next_locale_check {
+        let locale = AppLocale::detect();
+        if locale != state.locale {
+            state.locale = locale;
+            unsafe { InvalidateRect(state.overlay, ptr::null(), 0) };
+        }
+        state.next_locale_check = now + LOCALE_CHECK_INTERVAL;
+    }
     let target = find_codex_window();
     if target.is_null() || unsafe { IsIconic(target) } != 0 {
         CODEX_ACTIVE.store(false, Ordering::Relaxed);
@@ -305,11 +323,15 @@ fn track_codex_window() {
     let dpi = unsafe { GetDpiForWindow(target) }.max(96);
     let scale: f32 = dpi as f32 / 96.0_f32;
     let total_width = bounds.right - bounds.left;
-    let left_margin = (18.0_f32 * scale).round() as i32;
-    let right_reserve = (158.0_f32 * scale).round() as i32;
     let top_margin = (5.0_f32 * scale).round() as i32;
     let height = (30.0_f32 * scale).round() as i32;
-    let width = (total_width - left_margin - right_reserve).max((240.0_f32 * scale) as i32);
+    let dual_window = state.snapshot.primary.is_some() && state.snapshot.weekly.is_some();
+    let Some((relative_left, width)) = overlay_layout(total_width, scale, dual_window) else {
+        CODEX_ACTIVE.store(true, Ordering::Relaxed);
+        unsafe { ShowWindow(state.overlay, SW_HIDE) };
+        return;
+    };
+    let left = bounds.left + relative_left;
 
     if state.target != target {
         unsafe {
@@ -322,7 +344,7 @@ fn track_codex_window() {
         SetWindowPos(
             state.overlay,
             HWND_TOP,
-            bounds.left + left_margin,
+            left,
             bounds.top + top_margin,
             width,
             height,
@@ -330,6 +352,21 @@ fn track_codex_window() {
         );
         InvalidateRect(state.overlay, ptr::null(), 0);
     }
+}
+
+fn overlay_layout(total_width: i32, scale: f32, dual_window: bool) -> Option<(i32, i32)> {
+    let left_reserve = (220.0_f32 * scale).round() as i32;
+    let right_reserve = (158.0_f32 * scale).round() as i32;
+    let preferred_width = if dual_window { 380.0_f32 } else { 220.0_f32 };
+    let preferred_width = (preferred_width * scale).round() as i32;
+    let available_width = total_width - left_reserve - right_reserve;
+    let minimum_width = (170.0_f32 * scale).round() as i32;
+    if available_width < minimum_width {
+        return None;
+    }
+    let width = preferred_width.min(available_width);
+    let left = total_width - right_reserve - width;
+    Some((left, width))
 }
 
 fn find_codex_window() -> HWND {
@@ -381,11 +418,21 @@ unsafe fn paint(hwnd: HWND) {
     let dpi = GetDpiForWindow(hwnd).max(96);
     let scale: f32 = dpi as f32 / 96.0_f32;
 
-    let (snapshot, accent) = STATE
+    let (snapshot, accent, locale) = STATE
         .get()
         .and_then(|state| state.lock().ok())
-        .map(|state| (state.snapshot.clone(), PALETTES[state.palette_index].accent))
-        .unwrap_or((UsageSnapshot::default(), PALETTES[0].accent));
+        .map(|state| {
+            (
+                state.snapshot.clone(),
+                PALETTES[state.palette_index].accent,
+                state.locale,
+            )
+        })
+        .unwrap_or((
+            UsageSnapshot::default(),
+            PALETTES[0].accent,
+            AppLocale::English,
+        ));
 
     let background = CreateSolidBrush(rgb(31, 31, 31));
     FillRect(dc, &client, background);
@@ -413,11 +460,13 @@ unsafe fn paint(hwnd: HWND) {
     SetBkMode(dc, TRANSPARENT as i32);
 
     let width = client.right - client.left;
+    let settings_width = (24.0_f32 * scale).round() as i32;
+    let content_width = (width - settings_width).max(1);
     let text_bottom = client.bottom - (5.0_f32 * scale).round() as i32;
     match (&snapshot.primary, &snapshot.weekly) {
         (Some(primary), Some(weekly)) => {
-            let gap = (18.0_f32 * scale).round() as i32;
-            let side = ((width - gap) / 2).max(1);
+            let gap = (10.0_f32 * scale).round() as i32;
+            let side = ((content_width - gap) / 2).max(1);
             draw_metric(
                 dc,
                 RECT {
@@ -426,9 +475,8 @@ unsafe fn paint(hwnd: HWND) {
                     right: side,
                     bottom: text_bottom,
                 },
-                &primary.label,
-                primary.remaining_percent,
-                &primary.reset_label,
+                primary,
+                locale,
                 accent,
                 scale,
             );
@@ -437,12 +485,11 @@ unsafe fn paint(hwnd: HWND) {
                 RECT {
                     left: side + gap,
                     top: 0,
-                    right: width,
+                    right: content_width,
                     bottom: text_bottom,
                 },
-                &weekly.label,
-                weekly.remaining_percent,
-                &weekly.reset_label,
+                weekly,
+                locale,
                 accent,
                 scale,
             );
@@ -452,18 +499,25 @@ unsafe fn paint(hwnd: HWND) {
             RECT {
                 left: 0,
                 top: 0,
-                right: width,
+                right: content_width,
                 bottom: text_bottom,
             },
-            &window.label,
-            window.remaining_percent,
-            &window.reset_label,
+            window,
+            locale,
             accent,
             scale,
         ),
         (None, None) => {
-            let status = wide(snapshot.status.as_deref().unwrap_or("Codex 用量暂不可用"));
-            let mut status_rect = client;
+            let status = wide(
+                snapshot
+                    .status
+                    .map(|status| locale.status_text(status))
+                    .unwrap_or_else(|| locale.status_text(crate::model::UsageStatus::Retrying)),
+            );
+            let mut status_rect = RECT {
+                right: content_width,
+                ..client
+            };
             SetTextColor(dc, rgb(150, 150, 150));
             DrawTextW(
                 dc,
@@ -476,7 +530,7 @@ unsafe fn paint(hwnd: HWND) {
     }
 
     let mut dot = RECT {
-        left: client.right - (24.0_f32 * scale).round() as i32,
+        left: client.right - settings_width,
         top: 0,
         right: client.right,
         bottom: client.bottom,
@@ -500,14 +554,13 @@ unsafe fn paint(hwnd: HWND) {
 unsafe fn draw_metric(
     dc: *mut c_void,
     rect: RECT,
-    label: &str,
-    remaining: u8,
-    reset: &str,
+    window: &LimitWindow,
+    locale: AppLocale,
     accent: COLORREF,
     scale: f32,
 ) {
     let padding = (6.0_f32 * scale).round() as i32;
-    let text = format!("{label}  {remaining}%  {reset}");
+    let text = locale.metric_text(window);
     let text = wide(&text);
     let mut text_rect = RECT {
         left: rect.left + padding,
@@ -521,7 +574,7 @@ unsafe fn draw_metric(
         text.as_ptr(),
         -1,
         &mut text_rect,
-        DT_LEFT | DT_SINGLELINE | DT_VCENTER,
+        DT_CENTER | DT_SINGLELINE | DT_VCENTER,
     );
 
     let bar_height = (2.0_f32 * scale).round().max(2.0_f32) as i32;
@@ -538,7 +591,7 @@ unsafe fn draw_metric(
     DeleteObject(track as HGDIOBJ);
 
     let available_width = (full.right - full.left).max(0);
-    let fill_width = available_width * remaining as i32 / 100;
+    let fill_width = available_width * window.remaining_percent as i32 / 100;
     let fill = RECT {
         left: full.left,
         top: full.top,
@@ -627,4 +680,30 @@ unsafe fn process_path_for_window(hwnd: HWND) -> Option<PathBuf> {
     let ok = QueryFullProcessImageNameW(process, 0, buffer.as_mut_ptr(), &mut length);
     CloseHandle(process);
     (ok != 0).then(|| PathBuf::from(String::from_utf16_lossy(&buffer[..length as usize])))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compact_layout_is_right_aligned_and_preserves_menu_space() {
+        let (left, width) = overlay_layout(1_200, 1.0, false).expect("layout");
+        assert_eq!(width, 220);
+        assert_eq!(left, 822);
+        assert_eq!(1_200 - left - width, 158);
+        assert!(left >= 220);
+    }
+
+    #[test]
+    fn compact_layout_scales_with_dpi() {
+        let (left, width) = overlay_layout(1_800, 1.5, false).expect("layout");
+        assert_eq!(width, 330);
+        assert_eq!(1_800 - left - width, 237);
+    }
+
+    #[test]
+    fn compact_layout_hides_instead_of_covering_menus() {
+        assert_eq!(overlay_layout(500, 1.0, false), None);
+    }
 }

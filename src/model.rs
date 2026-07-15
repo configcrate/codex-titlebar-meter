@@ -2,16 +2,22 @@ use chrono::{DateTime, Local};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LimitWindow {
-    pub label: String,
+    pub duration_minutes: u64,
     pub remaining_percent: u8,
-    pub reset_label: String,
+    pub resets_at: Option<DateTime<Local>>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum UsageStatus {
+    Connecting,
+    Retrying,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UsageSnapshot {
     pub primary: Option<LimitWindow>,
     pub weekly: Option<LimitWindow>,
-    pub status: Option<String>,
+    pub status: Option<UsageStatus>,
     pub sampled_at: Option<DateTime<Local>>,
 }
 
@@ -20,16 +26,16 @@ impl UsageSnapshot {
         Self {
             primary: None,
             weekly: None,
-            status: Some("正在读取 Codex 用量…".to_string()),
+            status: Some(UsageStatus::Connecting),
             sampled_at: None,
         }
     }
 
-    pub fn error(message: impl Into<String>) -> Self {
+    pub fn retrying() -> Self {
         Self {
             primary: None,
             weekly: None,
-            status: Some(message.into()),
+            status: Some(UsageStatus::Retrying),
             sampled_at: None,
         }
     }

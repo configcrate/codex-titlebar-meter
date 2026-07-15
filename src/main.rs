@@ -4,6 +4,7 @@
 compile_error!("Codex Titlebar Meter currently supports Windows only.");
 
 mod codex;
+mod locale;
 mod model;
 mod native;
 mod settings;
