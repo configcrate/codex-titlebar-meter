@@ -22,12 +22,15 @@ impl AppLocale {
     }
 
     pub fn metric_text(self, window: &LimitWindow) -> String {
-        format!(
-            "{}  {}%  {}",
-            self.duration_label(window.duration_minutes),
-            window.remaining_percent,
-            self.reset_label(window)
-        )
+        let duration = self.duration_label(window.duration_minutes);
+        let reset = self.reset_label(window);
+        match self {
+            Self::Chinese => format!("{duration}额度 {}% · {reset}重置", window.remaining_percent),
+            Self::English => format!(
+                "{duration} quota {}% · resets {reset}",
+                window.remaining_percent
+            ),
+        }
     }
 
     pub fn status_text(self, status: UsageStatus) -> &'static str {
@@ -164,12 +167,12 @@ mod tests {
         assert!(
             AppLocale::Chinese
                 .metric_text(&weekly)
-                .starts_with("1周  94%")
+                .starts_with("1周额度 94% · ")
         );
         assert!(
             AppLocale::English
                 .metric_text(&weekly)
-                .starts_with("1 week  94%")
+                .starts_with("1 week quota 94% · resets ")
         );
     }
 }
