@@ -42,15 +42,15 @@ use windows_sys::Win32::{
         Input::KeyboardAndMouse::ReleaseCapture,
         WindowsAndMessaging::{
             CREATESTRUCTW, CS_DBLCLKS, CS_HREDRAW, CS_VREDRAW, CreateWindowExW, DefWindowProcW,
-            DispatchMessageW, EnumWindows, GWLP_HWNDPARENT, GWLP_USERDATA, GetClientRect,
-            GetMessageW, GetWindowRect, GetWindowThreadProcessId, HCURSOR, HTCAPTION, HWND_TOP,
-            IDC_ARROW, IsIconic, IsWindowVisible, LWA_ALPHA, LoadCursorW, MA_NOACTIVATE, MSG,
-            PostQuitMessage, RegisterClassW, SW_HIDE, SWP_NOACTIVATE, SWP_SHOWWINDOW, SendMessageW,
-            SetLayeredWindowAttributes, SetTimer, SetWindowLongPtrW, SetWindowPos, ShowWindow,
-            TranslateMessage, WM_DESTROY, WM_ERASEBKGND, WM_LBUTTONDBLCLK, WM_LBUTTONDOWN,
-            WM_MOUSEACTIVATE, WM_NCCREATE, WM_NCLBUTTONDBLCLK, WM_NCLBUTTONDOWN, WM_PAINT,
-            WM_RBUTTONUP, WM_TIMER, WNDCLASSW, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW,
-            WS_POPUP,
+            DispatchMessageW, EnumWindows, GWL_EXSTYLE, GWL_STYLE, GWLP_HWNDPARENT, GWLP_USERDATA,
+            GetClientRect, GetMessageW, GetWindowLongPtrW, GetWindowRect, GetWindowThreadProcessId,
+            HCURSOR, HTCAPTION, HWND_TOP, IDC_ARROW, IsIconic, IsWindowVisible, LWA_ALPHA,
+            LoadCursorW, MA_NOACTIVATE, MSG, PostQuitMessage, RegisterClassW, SW_HIDE,
+            SWP_NOACTIVATE, SWP_SHOWWINDOW, SendMessageW, SetLayeredWindowAttributes, SetTimer,
+            SetWindowLongPtrW, SetWindowPos, ShowWindow, TranslateMessage, WM_DESTROY,
+            WM_ERASEBKGND, WM_LBUTTONDBLCLK, WM_LBUTTONDOWN, WM_MOUSEACTIVATE, WM_NCCREATE,
+            WM_NCLBUTTONDBLCLK, WM_NCLBUTTONDOWN, WM_PAINT, WM_RBUTTONUP, WM_TIMER, WNDCLASSW,
+            WS_CAPTION, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOOLWINDOW, WS_POPUP,
         },
     },
 };
@@ -384,6 +384,11 @@ unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> B
     if IsWindowVisible(hwnd) == 0 || IsIconic(hwnd) != 0 {
         return TRUE;
     }
+    let style = GetWindowLongPtrW(hwnd, GWL_STYLE) as u32;
+    let extended_style = GetWindowLongPtrW(hwnd, GWL_EXSTYLE) as u32;
+    if !is_main_window_candidate(style, extended_style) {
+        return TRUE;
+    }
     let mut cloaked: u32 = 0;
     if DwmGetWindowAttribute(
         hwnd,
@@ -405,6 +410,10 @@ unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> B
         return 0;
     }
     TRUE
+}
+
+fn is_main_window_candidate(style: u32, extended_style: u32) -> bool {
+    style & WS_CAPTION != 0 && extended_style & WS_EX_TOOLWINDOW == 0
 }
 
 unsafe fn paint(hwnd: HWND) {
@@ -705,5 +714,16 @@ mod tests {
     #[test]
     fn compact_layout_hides_instead_of_covering_menus() {
         assert_eq!(overlay_layout(500, 1.0, false), None);
+    }
+
+    #[test]
+    fn codex_main_window_is_an_attachment_candidate() {
+        assert!(is_main_window_candidate(WS_CAPTION, 0));
+    }
+
+    #[test]
+    fn codex_pet_tool_window_is_not_an_attachment_candidate() {
+        assert!(!is_main_window_candidate(WS_CAPTION, WS_EX_TOOLWINDOW));
+        assert!(!is_main_window_candidate(WS_POPUP, WS_EX_TOOLWINDOW));
     }
 }

@@ -47,7 +47,7 @@ Set-ItemProperty -Path $runKey -Name $appName -Value ('"{0}"' -f $targetExe)
 
 New-Item -Path $uninstallKey -Force | Out-Null
 Set-ItemProperty -Path $uninstallKey -Name DisplayName -Value 'Codex Titlebar Meter'
-Set-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value '0.1.0'
+Set-ItemProperty -Path $uninstallKey -Name DisplayVersion -Value '0.1.1'
 Set-ItemProperty -Path $uninstallKey -Name Publisher -Value 'ConfigCrate'
 Set-ItemProperty -Path $uninstallKey -Name InstallLocation -Value $installDirectory
 Set-ItemProperty -Path $uninstallKey -Name URLInfoAbout -Value 'https://configcrate.com/'
