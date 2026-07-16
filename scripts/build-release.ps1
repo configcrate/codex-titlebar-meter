@@ -4,7 +4,7 @@ param()
 $ErrorActionPreference = 'Stop'
 $repository = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $dist = Join-Path $repository 'dist'
-$package = Join-Path $dist 'codex-titlebar-meter-v0.1.0-windows-x64'
+$package = Join-Path $dist 'codex-titlebar-meter-v0.1.1-windows-x64'
 
 Push-Location $repository
 try {
