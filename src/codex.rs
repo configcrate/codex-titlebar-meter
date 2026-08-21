@@ -62,13 +62,17 @@ fn run_session(executable: &Path) -> Result<()> {
 
 fn spawn_app_server(executable: &Path) -> Result<Child> {
     Command::new(executable)
-        .args(["-s", "read-only", "-a", "untrusted", "app-server"])
+        .args(app_server_args())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .creation_flags(CREATE_NO_WINDOW)
         .spawn()
         .with_context(|| format!("launch {} app-server", executable.display()))
+}
+
+fn app_server_args() -> [&'static str; 5] {
+    ["-s", "read-only", "-a", "never", "app-server"]
 }
 
 fn communicate(child: &mut Child) -> Result<()> {
@@ -319,5 +323,12 @@ mod tests {
         assert_eq!(parsed.primary.as_ref().unwrap().duration_minutes, 300);
         assert_eq!(parsed.weekly.as_ref().unwrap().remaining_percent, 94);
         assert_eq!(parsed.weekly.as_ref().unwrap().duration_minutes, 10_080);
+    }
+
+    #[test]
+    fn launches_current_codex_without_the_removed_untrusted_policy() {
+        let args = app_server_args();
+        assert_eq!(args, ["-s", "read-only", "-a", "never", "app-server"]);
+        assert!(!args.contains(&"untrusted"));
     }
 }
