@@ -36,12 +36,12 @@ fn worker_loop() {
             thread::sleep(Duration::from_millis(500));
         }
 
-        native::update_snapshot(UsageSnapshot::connecting());
+        native::mark_usage_connecting();
         let result = discover_desktop_cli().and_then(|executable| run_session(&executable));
         if let Err(error) = result {
             eprintln!("Codex usage reader: {error:#}");
             if native::codex_is_active() {
-                native::update_snapshot(UsageSnapshot::retrying());
+                native::mark_usage_retrying();
             }
         }
 

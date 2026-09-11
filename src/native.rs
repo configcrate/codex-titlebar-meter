@@ -13,6 +13,7 @@ use std::{
 };
 
 use anyhow::{Context, Result, bail};
+use chrono::Local;
 use windows_sys::Win32::{
     Foundation::{
         BOOL, COLORREF, CloseHandle, ERROR_ALREADY_EXISTS, GetLastError, HANDLE, HWND, LPARAM,
@@ -66,6 +67,7 @@ const MUTEX_NAME: &str = "Local\\ConfigCrate.CodexTitlebarMeter.4BC6AD61";
 const TRACK_TIMER: usize = 1;
 const TRACK_INTERVAL_MS: u32 = 250;
 const LOCALE_CHECK_INTERVAL: Duration = Duration::from_secs(2);
+const STALE_AFTER_SECONDS: i64 = 120;
 
 #[derive(Clone, Copy)]
 struct Palette {
@@ -357,7 +359,7 @@ fn track_codex_window() {
 fn overlay_layout(total_width: i32, scale: f32, dual_window: bool) -> Option<(i32, i32)> {
     let left_reserve = (220.0_f32 * scale).round() as i32;
     let right_reserve = (158.0_f32 * scale).round() as i32;
-    let preferred_width = if dual_window { 380.0_f32 } else { 220.0_f32 };
+    let preferred_width = if dual_window { 460.0_f32 } else { 220.0_f32 };
     let preferred_width = (preferred_width * scale).round() as i32;
     let available_width = total_width - left_reserve - right_reserve;
     let minimum_width = (170.0_f32 * scale).round() as i32;
@@ -472,69 +474,98 @@ unsafe fn paint(hwnd: HWND) {
     let settings_width = (24.0_f32 * scale).round() as i32;
     let content_width = (width - settings_width).max(1);
     let text_bottom = client.bottom - (5.0_f32 * scale).round() as i32;
-    match (&snapshot.primary, &snapshot.weekly) {
-        (Some(primary), Some(weekly)) => {
-            let gap = (10.0_f32 * scale).round() as i32;
-            let side = ((content_width - gap) / 2).max(1);
-            draw_metric(
+    if snapshot_is_stale(&snapshot, Local::now().timestamp()) {
+        let status = wide(locale.status_text(crate::model::UsageStatus::Stale));
+        let mut status_rect = RECT {
+            right: content_width,
+            bottom: text_bottom,
+            ..client
+        };
+        SetTextColor(dc, rgb(150, 150, 150));
+        DrawTextW(
+            dc,
+            status.as_ptr(),
+            -1,
+            &mut status_rect,
+            DT_CENTER | DT_SINGLELINE | DT_VCENTER,
+        );
+
+        let padding = (6.0_f32 * scale).round() as i32;
+        let bar_height = (2.0_f32 * scale).round().max(2.0_f32) as i32;
+        let stale_bar = RECT {
+            left: padding,
+            top: text_bottom - bar_height,
+            right: content_width - padding,
+            bottom: text_bottom,
+        };
+        let stale_brush = CreateSolidBrush(rgb(92, 92, 92));
+        FillRect(dc, &stale_bar, stale_brush);
+        DeleteObject(stale_brush as HGDIOBJ);
+    } else {
+        match (&snapshot.primary, &snapshot.weekly) {
+            (Some(primary), Some(weekly)) => {
+                let gap = (10.0_f32 * scale).round() as i32;
+                let side = ((content_width - gap) / 2).max(1);
+                draw_metric(
+                    dc,
+                    RECT {
+                        left: 0,
+                        top: 0,
+                        right: side,
+                        bottom: text_bottom,
+                    },
+                    primary,
+                    locale,
+                    accent,
+                    scale,
+                );
+                draw_metric(
+                    dc,
+                    RECT {
+                        left: side + gap,
+                        top: 0,
+                        right: content_width,
+                        bottom: text_bottom,
+                    },
+                    weekly,
+                    locale,
+                    accent,
+                    scale,
+                );
+            }
+            (Some(window), None) | (None, Some(window)) => draw_metric(
                 dc,
                 RECT {
                     left: 0,
                     top: 0,
-                    right: side,
-                    bottom: text_bottom,
-                },
-                primary,
-                locale,
-                accent,
-                scale,
-            );
-            draw_metric(
-                dc,
-                RECT {
-                    left: side + gap,
-                    top: 0,
                     right: content_width,
                     bottom: text_bottom,
                 },
-                weekly,
+                window,
                 locale,
                 accent,
                 scale,
-            );
-        }
-        (Some(window), None) | (None, Some(window)) => draw_metric(
-            dc,
-            RECT {
-                left: 0,
-                top: 0,
-                right: content_width,
-                bottom: text_bottom,
-            },
-            window,
-            locale,
-            accent,
-            scale,
-        ),
-        (None, None) => {
-            let status = wide(
-                snapshot
-                    .status
-                    .map(|status| locale.status_text(status))
-                    .unwrap_or_else(|| locale.status_text(crate::model::UsageStatus::Retrying)),
-            );
-            let mut status_rect = RECT {
-                right: content_width,
-                ..client
-            };
-            SetTextColor(dc, rgb(150, 150, 150));
-            DrawTextW(
-                dc,
-                status.as_ptr(),
-                -1,
-                &mut status_rect,
-                DT_CENTER | DT_SINGLELINE | DT_VCENTER,
-            );
+            ),
+            (None, None) => {
+                let status = wide(
+                    snapshot
+                        .status
+                        .map(|status| locale.status_text(status))
+                        .unwrap_or_else(|| locale.status_text(crate::model::UsageStatus::Retrying)),
+                );
+                let mut status_rect = RECT {
+                    right: content_width,
+                    ..client
+                };
+                SetTextColor(dc, rgb(150, 150, 150));
+                DrawTextW(
+                    dc,
+                    status.as_ptr(),
+                    -1,
+                    &mut status_rect,
+                    DT_CENTER | DT_SINGLELINE | DT_VCENTER,
+                );
+            }
         }
     }
 
@@ -607,10 +638,25 @@ unsafe fn draw_metric(
         right: full.left + fill_width,
         bottom: full.bottom,
     };
-    let brush = CreateSolidBrush(accent);
+    let brush = CreateSolidBrush(quota_color(window.remaining_percent, accent));
     FillRect(dc, &fill, brush);
     GdiFlush();
     DeleteObject(brush as HGDIOBJ);
+}
+
+fn quota_color(remaining_percent: u8, accent: COLORREF) -> COLORREF {
+    match remaining_percent {
+        0..=10 => rgb(239, 83, 94),
+        11..=20 => rgb(235, 178, 54),
+        _ => accent,
+    }
+}
+
+fn snapshot_is_stale(snapshot: &UsageSnapshot, now_timestamp: i64) -> bool {
+    snapshot
+        .sampled_at
+        .as_ref()
+        .is_some_and(|sampled_at| now_timestamp - sampled_at.timestamp() >= STALE_AFTER_SECONDS)
 }
 
 const fn rgb(red: u8, green: u8, blue: u8) -> COLORREF {
@@ -639,6 +685,37 @@ pub(crate) fn update_snapshot(snapshot: UsageSnapshot) {
     let hwnd = match state.lock() {
         Ok(mut state) => {
             state.snapshot = snapshot;
+            state.overlay
+        }
+        Err(_) => return,
+    };
+    unsafe {
+        InvalidateRect(hwnd, ptr::null(), 0);
+    }
+}
+
+pub(crate) fn mark_usage_connecting() {
+    mark_usage_status(crate::model::UsageStatus::Connecting);
+}
+
+pub(crate) fn mark_usage_retrying() {
+    mark_usage_status(crate::model::UsageStatus::Retrying);
+}
+
+fn mark_usage_status(status: crate::model::UsageStatus) {
+    let Some(state) = STATE.get() else { return };
+    let hwnd = match state.lock() {
+        Ok(mut state) => {
+            if state.snapshot.primary.is_none() && state.snapshot.weekly.is_none() {
+                state.snapshot = match status {
+                    crate::model::UsageStatus::Connecting => UsageSnapshot::connecting(),
+                    crate::model::UsageStatus::Retrying | crate::model::UsageStatus::Stale => {
+                        UsageSnapshot::retrying()
+                    }
+                };
+            } else {
+                state.snapshot.status = Some(status);
+            }
             state.overlay
         }
         Err(_) => return,
@@ -712,6 +789,14 @@ mod tests {
     }
 
     #[test]
+    fn dual_window_layout_has_room_for_both_reset_labels() {
+        let (left, width) = overlay_layout(1_200, 1.0, true).expect("layout");
+        assert_eq!(width, 460);
+        assert_eq!(1_200 - left - width, 158);
+        assert!(left >= 220);
+    }
+
+    #[test]
     fn compact_layout_hides_instead_of_covering_menus() {
         assert_eq!(overlay_layout(500, 1.0, false), None);
     }
@@ -725,5 +810,22 @@ mod tests {
     fn codex_pet_tool_window_is_not_an_attachment_candidate() {
         assert!(!is_main_window_candidate(WS_CAPTION, WS_EX_TOOLWINDOW));
         assert!(!is_main_window_candidate(WS_POPUP, WS_EX_TOOLWINDOW));
+    }
+
+    #[test]
+    fn quota_color_warns_only_when_remaining_is_low() {
+        let accent = rgb(95, 145, 255);
+        assert_eq!(quota_color(21, accent), accent);
+        assert_eq!(quota_color(20, accent), rgb(235, 178, 54));
+        assert_eq!(quota_color(10, accent), rgb(239, 83, 94));
+    }
+
+    #[test]
+    fn quota_becomes_stale_after_two_minutes() {
+        let mut snapshot = UsageSnapshot::connecting();
+        snapshot.sampled_at = Some(Local::now());
+        let sampled_at = snapshot.sampled_at.as_ref().unwrap().timestamp();
+        assert!(!snapshot_is_stale(&snapshot, sampled_at + 119));
+        assert!(snapshot_is_stale(&snapshot, sampled_at + 120));
     }
 }

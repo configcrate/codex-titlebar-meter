@@ -11,6 +11,7 @@ pub struct LimitWindow {
 pub enum UsageStatus {
     Connecting,
     Retrying,
+    Stale,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

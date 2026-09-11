@@ -18,6 +18,8 @@ Codex Titlebar Meter 是一个原生 Windows 伴生程序。它把 Codex 返回�
 - 无需 API Key：不读取、不复制、不保存登录令牌。
 - 不修改 Codex：不注入 DLL，不改应用文件，不受普通 Codex 更新覆盖。
 - 按实际额度显示：账号没有返回短周期窗口时，不会伪造一个进度条。
+- 低额度警示：剩余不超过 20% 时进度条变黄，不超过 10% 时变红。
+- 失效可见：连续两分钟没有读到新数据时，进度条变灰并明确提示正在重连。
 - 紧凑不挡菜单：单额度窗口仅占 220 个逻辑像素，并固定在标题栏右侧安全区域。
 - 跟随 Codex 语言：读取 Codex 的 `localeOverride`，自动显示中文或英文；选择自动检测时跟随系统语言。
 - 轻量原生：Rust + Win32/GDI，无 WebView、Electron 或后台 Windows 服务。
@@ -123,6 +125,8 @@ The compact overlay stays on the right side of the title bar so it does not cove
 - Compact native Rust + Win32/GDI executable with no Electron, WebView, or Windows service.
 - Per-user installation, automatic login startup, portable mode, and a clean uninstall entry in Windows Settings.
 - If Codex does not return a short-term quota window, the meter does not invent one.
+- Low-quota warning colors: amber at 20% remaining and red at 10% remaining.
+- A gray stale-data state appears after two minutes without a successful refresh while the meter reconnects.
 
 ### Controls
 

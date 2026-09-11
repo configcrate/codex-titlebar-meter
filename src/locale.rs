@@ -37,8 +37,10 @@ impl AppLocale {
         match (self, status) {
             (Self::Chinese, UsageStatus::Connecting) => "正在读取 Codex 用量…",
             (Self::Chinese, UsageStatus::Retrying) => "暂时无法读取用量，正在重试…",
+            (Self::Chinese, UsageStatus::Stale) => "数据已过期 · 正在重连",
             (Self::English, UsageStatus::Connecting) => "Reading Codex usage…",
             (Self::English, UsageStatus::Retrying) => "Usage unavailable. Retrying…",
+            (Self::English, UsageStatus::Stale) => "Usage stale · reconnecting",
         }
     }
 
