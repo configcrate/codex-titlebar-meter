@@ -23,6 +23,7 @@ Codex Titlebar Meter 是一个原生 Windows 伴生程序。它把 Codex 返回�
 - 紧凑不挡菜单：单额度窗口仅占 220 个逻辑像素，并固定在标题栏右侧安全区域。
 - 跟随 Codex 语言：读取 Codex 的 `localeOverride`，自动显示中文或英文；选择自动检测时跟随系统语言。
 - 轻量原生：Rust + Win32/GDI，无 WebView、Electron 或后台 Windows 服务。
+- 自动管理缓存：Codex 更新后仅保留当前使用的 CLI 副本，并清理旧版本；仍在运行的副本会留待下次清理。
 - 易于移除：按用户安装，无需管理员权限，并出现在 Windows“已安装的应用”中。
 
 ## 操作
@@ -82,6 +83,8 @@ powershell -ExecutionPolicy Bypass -File .\uninstall.ps1 -PurgeSettings
 
 程序从 Store 版 Codex 安装目录复制其本地 `codex.exe` 到自己的用户缓存，再以只读沙盒参数启动 `codex app-server`。Codex 自己管理现有登录状态；本程序只接收额度百分比、周期和重置时间。
 
+从 v0.1.4 起，程序启动时会自动删除自己缓存的旧版 `codex.exe`。它只清理符合 Codex 包命名的旧目录和其中的程序文件，不会删除设置文件；正在运行而被 Windows 锁定的副本会在后续启动时重试清理。
+
 没有遥测，没有第三方服务器，也不会向 ConfigCrate 上传数据。
 
 ## 当前范围
@@ -123,6 +126,7 @@ The compact overlay stays on the right side of the title bar so it does not cove
 - Clear copy such as `1 week quota 72% · resets Jul 22`, with a progress bar below it.
 - No API key, credential copying, telemetry, third-party server, DLL injection, or Codex file modification.
 - Compact native Rust + Win32/GDI executable with no Electron, WebView, or Windows service.
+- Automatically removes old cached Codex CLI copies after Codex updates; a copy still in use is retried on a later start.
 - Per-user installation, automatic login startup, portable mode, and a clean uninstall entry in Windows Settings.
 - If Codex does not return a short-term quota window, the meter does not invent one.
 - Low-quota warning colors: amber at 20% remaining and red at 10% remaining.
@@ -174,6 +178,8 @@ powershell -ExecutionPolicy Bypass -File .\uninstall.ps1 -PurgeSettings
 ### Data and privacy
 
 The app copies the local `codex.exe` bundled with the Microsoft Store build of Codex into its own user cache, then launches `codex app-server` with read-only sandbox arguments. Codex keeps control of the existing login state; the meter receives only quota percentages, window durations, and reset times.
+
+Since v0.1.4, the app removes its own obsolete CLI copies on startup. It leaves preferences alone and retries later if Windows has locked a still-running copy.
 
 Nothing is sent to ConfigCrate or any third-party server.
 

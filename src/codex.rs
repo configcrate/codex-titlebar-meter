@@ -274,14 +274,15 @@ fn discover_desktop_cli() -> Result<PathBuf> {
 
 fn cache_desktop_cli(source: &Path, package_name: &str) -> Result<Option<PathBuf>> {
     let local_app_data = env::var_os("LOCALAPPDATA").context("LOCALAPPDATA is unavailable")?;
-    let directory = PathBuf::from(local_app_data)
+    let cache_root = PathBuf::from(local_app_data)
         .join("ConfigCrate")
         .join("CodexTitlebarMeter")
-        .join("desktop-cli")
-        .join(package_name);
+        .join("desktop-cli");
+    let directory = cache_root.join(package_name);
     let destination = directory.join("codex.exe");
     let source_len = fs::metadata(source)?.len();
     if fs::metadata(&destination).is_ok_and(|metadata| metadata.len() == source_len) {
+        prune_old_desktop_clis(&cache_root, &directory);
         return Ok(Some(destination));
     }
 
@@ -293,12 +294,74 @@ fn cache_desktop_cli(source: &Path, package_name: &str) -> Result<Option<PathBuf
         let _ = fs::remove_file(&destination);
         fs::rename(&temporary, &destination)?;
     }
+    prune_old_desktop_clis(&cache_root, &directory);
     Ok(Some(destination))
+}
+
+/// Keep the current Codex CLI and remove only old cache folders created by this app.
+/// A still-running app-server may lock its executable; it is left for a later pass.
+fn prune_old_desktop_clis(cache_root: &Path, current_directory: &Path) {
+    let Ok(directories) = fs::read_dir(cache_root) else {
+        return;
+    };
+    for directory in directories.flatten() {
+        let path = directory.path();
+        let name = directory.file_name();
+        let name = name.to_string_lossy();
+        if path == current_directory || !name.starts_with("OpenAI.Codex_") {
+            continue;
+        }
+        if !directory.file_type().is_ok_and(|kind| kind.is_dir() && !kind.is_symlink()) {
+            continue;
+        }
+        let Ok(files) = fs::read_dir(&path) else {
+            continue;
+        };
+        let files: Vec<_> = files.collect::<std::io::Result<_>>().unwrap_or_default();
+        if files.iter().any(|file| {
+            let name = file.file_name();
+            let allowed_name = name == "codex.exe" || name == "codex.exe.tmp";
+            !allowed_name || !file.file_type().is_ok_and(|kind| kind.is_file() && !kind.is_symlink())
+        }) {
+            continue;
+        }
+        for file in files {
+            let _ = fs::remove_file(file.path());
+        }
+        let _ = fs::remove_dir(&path);
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn prunes_only_old_generated_cli_files() {
+        let root = env::temp_dir().join(format!(
+            "codex-titlebar-meter-cache-test-{}-{}",
+            std::process::id(),
+            Local::now().timestamp_nanos_opt().unwrap()
+        ));
+        let current = root.join("OpenAI.Codex_current");
+        let old = root.join("OpenAI.Codex_old");
+        let unrelated = root.join("desktop-cli-test");
+        let with_extra_file = root.join("OpenAI.Codex_user-data");
+        for directory in [&current, &old, &unrelated, &with_extra_file] {
+            fs::create_dir_all(directory).unwrap();
+            fs::write(directory.join("codex.exe"), b"test").unwrap();
+        }
+        fs::write(with_extra_file.join("notes.txt"), b"keep").unwrap();
+
+        prune_old_desktop_clis(&root, &current);
+
+        assert!(current.join("codex.exe").exists());
+        assert!(!old.exists());
+        assert!(unrelated.join("codex.exe").exists());
+        assert!(with_extra_file.join("codex.exe").exists());
+        assert!(with_extra_file.join("notes.txt").exists());
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn parses_remaining_percent_and_labels() {
